@@ -1,58 +1,74 @@
 import nltk
 from nltk import word_tokenize
-nltk.download('punkt')
+import os,sys
+#nltk.download('punkt')
 
 pcorpus = dict()
 pcorpus1 = dict()
+
 lines_lang1 = open("data_lang1.txt", "r").readlines()
 lines_lang2 = open("data_lang2.txt", "r").readlines()
+
+# lines_lang1 = open("d:\Download\EM_Translation-master\data_lang1.txt", "r").readlines()
+# lines_lang2 = open("d:\Download\EM_Translation-master\data_lang2.txt", "r").readlines()
 
 for line1, line2 in zip(lines_lang1, lines_lang2):
     sentence1 = tuple(word_tokenize("NULL " + line1.strip("\n")))
     sentence2 = tuple(word_tokenize("NULL " + line2.strip("\n")))
     pcorpus[sentence1] = sentence2
-    pcorpus1[sentence2] = sentence1
-print (pcorpus)
+#print (pcorpus)
 
-#dic word2:{word1:probability}
-dic={}
-for i in pcorpus1.keys():
-    for j in i:
-        dic[j]={}
-
-for i in pcorpus1.keys():
-    for j in i:
-        for t in pcorpus1[i]:
-            dic[j][t]=0
-        
-for sen in pcorpus1.keys():
-    for word in sen:
-        for trans in pcorpus1[sen]:
-            dic[word][trans]+=1
-
-for l2 in dic.keys():
-    s=0
-    for l1 in dic[l2]:
-        s+=dic[l2][l1]
-    for l1 in dic[l2]:
-        dic[l2][l1]=round(dic[l2][l1]/s,2)
-print(dic)
-
-#translation_probs word1:{word2:probability}
-
+forDic={}
+engDic={}
+for i in pcorpus.keys():
+        for word in i:
+                engDic[word]=0
+        for word in pcorpus[i]:
+                forDic[word]=0
 translation_probs = {}
-for i in dic.keys():
-    for j in dic[i]:
-        translation_probs[j]={}
-for i in dic.keys():
-    for j in dic[i]:
-        translation_probs[j][i]=0
-for i in dic.keys():
-    for j in dic[i]:
-        translation_probs[j][i]=dic[i][j]
+for en in engDic.keys():
+        translation_probs[en]={}
+        for fo in forDic.keys():
+                translation_probs[en][fo]=round(1.0/len(engDic),3)
+                translation_probs[en][fo]=0.1
 
-print(translation_probs["ok-voon"])
+def init_params():
+        totalf={}
+        count={}
+        for i in forDic.keys():
+                totalf[i]=0
+        for i in engDic.keys():
+                count[i]={}
+                for j in forDic.keys():
+                        count[i][j]=0
+        return totalf,count
+#print(translation_probs["ok-voon"])
 #{'NULL': 0.04, 'at-voon': 0.19, 'bichat': 0.08, 'dat': 0.07, 'at-drubel': 0.17, 'pippat': 0.11, 'rrat': 0.08, 'krat': 0.08, 'sat': 0.17, 'lat': 0.08}
 
-num_epochs = 1
-#for i in range(num_epochs):
+num_epochs = 10
+
+for i in range(num_epochs):
+        stotal={}
+        totalf,count = init_params()
+        for sen in pcorpus.keys():
+                for eword in sen:
+                        stotal[eword]=0
+                        for fword in pcorpus[sen]:
+                                stotal[eword]+=translation_probs[eword][fword]
+                for eword in sen:
+                        for fword in pcorpus[sen]:                               
+                                # stotal(e1)=t(e1|f1)+t(e1|f2)...t(e1|fn)
+                                # count(e1|f1)=t(e1|f1)/stotal(e1)，是翻译成e1的所有f中，f1翻译成e1的比例
+                                count[eword][fword]+=translation_probs[eword][fword]/stotal[eword]
+                                totalf[fword]+=translation_probs[eword][fword]/stotal[eword]
+        for fword in forDic.keys():
+                for eword in engDic.keys():
+                        translation_probs[eword][fword]=count[eword][fword]/totalf[fword]
+                        # 这里的totalf是对应于count的求和
+                        # 例如t(e1|f1)=count(e1|f1)/sum(count(e|f1)) 表示在f1翻译成所有e中，f1翻译成e1的比例
+                        # temp=0
+                        # for e in engDic.keys():
+                        #         temp+=count[e][fword]
+                        # print(temp-totalf[fword]) 0
+
+print(translation_probs)
