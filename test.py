@@ -56,15 +56,15 @@ for i in range(num_epochs):
                         for fword in pcorpus[sen]:
                                 stotal[eword]+=translation_probs[eword][fword]
                 for eword in sen:
-                        for fword in pcorpus[sen]:
-                                # temp=translation_probs[eword][fword]
-                                # temp2=stotal[eword]
+                        for fword in pcorpus[sen]:                               
+                                # stotal(e1)=t(e1|f1)+t(e1|f2)...t(e1|fn)
+                                # count(e1|f1)=t(e1|f1)/stotal(e1)，是翻译成e1的所有f中，f1翻译成e1的比例
                                 count[eword][fword]+=translation_probs[eword][fword]/stotal[eword]
                                 totalf[fword]+=translation_probs[eword][fword]/stotal[eword]
         for fword in forDic.keys():
                 for eword in engDic.keys():
                         translation_probs[eword][fword]=count[eword][fword]/totalf[fword]
-                        # 这里的totalf是对应与count的求和
+                        # 这里的totalf是对应于count的求和
                         # 例如t(e1|f1)=count(e1|f1)/sum(count(e|f1)) 表示在f1翻译成所有e中，f1翻译成e1的比例
                         # temp=0
                         # for e in engDic.keys():
